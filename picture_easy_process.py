@@ -35,21 +35,23 @@ img1 = img                              #大图
 img2 = cv2.imread('IMG_2345.JPG')		#小图
 
 rows,cols,channels = img2.shape
-roi = img1[100:100+rows,100:100+cols]
+roi = img1[800:800+rows,800:800+cols]
 
 img2gray = cv2.cvtColor(img2,cv2.COLOR_BGR2GRAY)
 ret,mask = cv2.threshold(img2gray, 175, 255, cv2.THRESH_BINARY)  #阈值,阈值化后的图=cv2.threshold(图像,阈值,使用值上限,使用的阈值类型)
+#print(ret)
 
 #一堆 bitwise_not/and/or/xor
+#cv2.bitwise_and(第一个对象，第二个对象，输出值dst，掩膜（黑的地方不处理做零，即蒙版）)
 mask_inv = cv2.bitwise_not(mask)
 img1_bg = cv2.bitwise_and(roi,roi,mask = mask)
 img2_fg = cv2.bitwise_and(img2,img2,mask = mask_inv)
 
 dst = cv2.add(img1_bg,img2_fg)
-img1[100:100+rows,100:100+cols] = dst
+img1[800:800+rows,800:800+cols] = dst
 
 cv2.namedWindow('res',cv2.WINDOW_NORMAL)
-cv2.imshow('res',img1)
+cv2.imshow('res',img1_bg)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
