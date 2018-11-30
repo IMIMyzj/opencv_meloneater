@@ -1,52 +1,59 @@
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include <iostream>
+/**************************************************
+*自动阈值的两种type, 多种blockSize, 多种C的效果
+*两种type没多大的差别
+*blockSize越大, 噪点颗粒越大
+*C越大，二值化的阈值也就越小
+*局部的阈值化操作，受到高斯干扰比较大
+***************************************************/
+
+#include <opencv2/opencv.hpp>
+
 using namespace cv;
 using namespace std;
 
-#define WINDOW_NAME "【程序窗口】"        //为窗口标题定义的宏 
+#define WINDOW_NAME "threshold"
 
-int g_nThresholdValue = 100;
-int g_nThresholdType = 3;
-Mat g_srcImage, g_hsvImage, g_dstImage, g_hImage;
+int type = 0;
+int blockSize = 0;
+int C = 0;
+Mat HSV, dst, h_img;
 vector<Mat> channels;
 
-void on_Threshold( int, void* );//回调函数
+void on_Threshold(int, void*);
 
 
 int main( )
 {
-	g_srcImage = imread("./part1/1.jpg");
-	if(!g_srcImage.data ) { printf("读取图片错误，请确定目录下是否有imread函数指定的图片存在~！ \n"); return false; }  
-	namedWindow("原始图", WINDOW_NORMAL);
-	imshow("原始图",g_srcImage);
+	Mat src;
+	src = imread("./part1/daguang.jpg",1);
+	namedWindow("src", WINDOW_NORMAL);
+	imshow("src", src);
 
-	cvtColor( g_srcImage, g_hsvImage, COLOR_RGB2HSV );
-	split(g_hsvImage, channels);
-	g_hImage = channels.at(0);
-
-	namedWindow( WINDOW_NAME, WINDOW_NORMAL );
+	cvtColor(src, HSV, CV_BGR2HSV);
+	split(HSV, channels);
+	h_img = channels.at(0);
 	
-	createTrackbar("模式", WINDOW_NAME, &g_nThresholdType, 4, on_Threshold);
 
-	createTrackbar("参数值", WINDOW_NAME, &g_nThresholdValue, 255, on_Threshold);
+	namedWindow(WINDOW_NAME, WINDOW_NORMAL);
+	createTrackbar("调整算法", WINDOW_NAME, &type, 1, on_Threshold);
+	createTrackbar("像素邻域尺寸", WINDOW_NAME, &blockSize, 21, on_Threshold);
+	createTrackbar("常数值", WINDOW_NAME, &C, 100, on_Threshold);
+	on_Threshold(0, 0);
+	
 
-	on_Threshold( 0, 0 );
-
-	while(1)
-	{
+	while (1) {
 		int key;
-		key = waitKey( 20 );
-		if( (char)key == 27 ){ break; }
+		key = waitKey(20);
+		if ((char)key == 27) {
+			destroyAllWindows();
+			break;
+		}
 	}
-
 }
 
-void on_Threshold( int, void* )
-{
-	//调用阈值函数
-	threshold(g_hImage,g_dstImage,g_nThresholdValue,255,g_nThresholdType);
+void on_Threshold(int, void*) {
+	blockSize = (blockSize << 1)+ 3;//大于等于3的奇数
+	adaptiveThreshold(h_img, dst, 255, type, THRESH_BINARY, blockSize, C);
 
-	//更新效果图
-	imshow( WINDOW_NAME, g_dstImage );
+	imshow(WINDOW_NAME, dst);
 }
